@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/widget_root"
+ android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical"
+ android:padding="16dp" android:background="@drawable/widget_background">
+<TextView android:id="@+id/widget_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+ android:text="Mi Bolsillo" android:textColor="#AFC7E5" android:textSize="13sp" />
+<TextView android:id="@+id/widget_balance" android:layout_width="match_parent" android:layout_height="wrap_content"
+ android:text="Bs 0,00" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="27sp" android:paddingTop="7dp" />
+<TextView android:id="@+id/widget_expense" android:layout_width="match_parent" android:layout_height="wrap_content"
+ android:text="Gasto de hoy: Bs 0,00" android:textColor="#AFC7E5" android:textSize="13sp" android:paddingTop="5dp" />
+<TextView android:id="@+id/widget_add" android:layout_width="match_parent" android:layout_height="wrap_content"
+ android:text="＋ Registrar gasto" android:textColor="#35DFA7" android:textStyle="bold" android:gravity="end" android:paddingTop="14dp" android:textSize="14sp" />
+</LinearLayout>

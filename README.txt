@@ -1,29 +1,55 @@
-MI BOLSILLO - PROYECTO ANDROID
+MI BOLSILLO 3.0 - PROYECTO ANDROID
+==================================
+Funciones: Personal/Negocio, vistas diario/mensual/rango, análisis,
+Descubre, retos, 5 monedas, CSV, informes imprimibles o PDF,
+notificación opcional de registro rápido y widget Android configurable.
 
-Este ZIP contiene el proyecto fuente, NO un APK ya compilado.
+COMPILAR DESDE GITHUB EN EL CELULAR
+1. Copia todos los archivos del ZIP a la raíz de tu repositorio privado MiBolsillo.
+2. Haz commit y push a main.
+3. En GitHub, abre Actions > Compilar APK Mi Bolsillo.
+4. Abre la ejecución verde, baja a Artifacts y descarga MiBolsillo-APK-debug.
+5. Extrae el ZIP del artifact e instala app-debug.apk.
 
-PARA CREAR EL APK EN ANDROID STUDIO:
-1. Extrae el ZIP.
-2. Abre Android Studio > Open y selecciona la carpeta MiBolsilloAndroid.
-3. Instala Android SDK 35 y JDK 17 si Android Studio lo solicita.
-4. Espera a que Gradle sincronice el proyecto. Requiere Internet para descargar herramientas por primera vez.
-5. Menú Build > Build Bundle(s) / APK(s) > Build APK(s).
-6. Encontrarás el APK de depuración en: app/build/outputs/apk/debug/app-debug.apk
-7. Copia ese APK a tu teléfono e instálalo.
+ACTUALIZAR DESDE TERMUX (si ya clonaste el repositorio):
+  cd ~/MiBolsillo
+  unzip -o ~/storage/downloads/MiBolsilloAndroid_v3_proyecto.zip -d ~/mb_v3
+  cp -r ~/mb_v3/MiBolsilloAndroid/. ~/MiBolsillo/
+  git add .
+  git commit -m "Mi Bolsillo 3.0: informes, widget y notificaciones"
+  git push origin main
 
-NOTAS:
-- No requiere conexión a Internet para el funcionamiento normal.
-- Guarda gastos, metas y movimientos dentro del almacenamiento local de Android WebView.
-- Para copiar datos desde el HTML anterior, usa Ajustes > Exportar respaldo JSON en la versión HTML e importa el JSON en la APK. El almacenamiento no se transfiere solo.
-- Los respaldos JSON/CSV usan el selector de documentos del sistema Android.
-- El dictado usa la app de reconocimiento de voz disponible en tu teléfono.
-- No se ha compilado ni probado físicamente este proyecto en este entorno.
-- No borres datos de la app sin hacer una copia JSON.
+ATENCION AL ACTUALIZAR LA APP
+La compilación de DEBUG en GitHub Actions usa normalmente una firma temporal
+que puede CAMBIAR entre ejecuciones. Si Android rechaza la actualización,
+no desinstales sin antes EXPORTAR UN RESPALDO JSON desde la versión vieja.
+Después desinstala la vieja, instala la nueva e importa ese JSON.
+Para actualizaciones de producción se necesita una clave de firma estable.
 
-OPCION ALTERNATIVA: GITHUB ACTIONS (SIN INSTALAR ANDROID STUDIO)
-1. Crea un repositorio GitHub y sube el contenido de la carpeta MiBolsilloAndroid (no la carpeta contenedora).
-2. Abre Actions > Compilar APK Mi Bolsillo > Run workflow.
-3. Al terminar, descarga el archivo MiBolsillo-APK-debug de la sección Artifacts.
-4. Dentro está app-debug.apk para Android.
+MONEDAS
+BOB, USD, EUR, BRL y ARS. Cada cuenta tiene una moneda de presentación.
+Cambiarla NO convierte importes, NO calcula tipos de cambio. El historial
+existente conserva sus cifras originales sin ninguna conversión automática.
+No mezclar importes de distintas monedas en una misma cuenta.
 
-Este procedimiento requiere cuenta GitHub, Internet y permiso para ejecutar workflows.
+NOTIFICACIONES
+En Ajustes puedes activar una notificación fija opcional. Al tocarla se
+abre el formulario de gasto. En Android 13+ se pide permiso de notificaciones.
+El widget se agrega desde la pantalla de inicio de Android, opción Widgets,
+Mi Bolsillo. Elige Personal o Negocio al instalar el widget.
+
+PREMIUM Y ANUNCIOS
+NO hay anuncios activos ni cobros en esta compilación. La interfaz incluye
+una sección de Premium pendiente de publicar, sin activar falsas compras.
+Antes de monetizar es NECESARIO integrar y probar Google Play Billing con
+un producto no consumible, verificar compras, configurar AdMob y consentimiento,
+y entregar la ausencia de anuncios a compradores Premium verificados.
+NO publicitar como compra operativa la sección que todavía está pendiente.
+
+GOOGLE PLAY
+La APK debug es para pruebas, no publicación. Para Play se requiere AAB
+firmado para producción, target SDK vigente, declaraciones y política de
+privacidad, políticas de datos, pruebas cerradas cuando correspondan.
+
+Datos guardados en WebView localStorage. No se sincronizan con otros teléfonos.
+Exporta respaldos JSON con regularidad.

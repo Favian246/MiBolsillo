@@ -1,6 +1,17 @@
 package com.mibolsillo.app;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.Manifest;
+import android.print.PrintManager;
+import android.webkit.WebView;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
@@ -10,7 +21,6 @@ import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
-import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
 import android.widget.Toast;
@@ -29,12 +39,17 @@ public class MainActivity extends Activity {
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
     private byte[] pendingExport;
+    private WebView printView;
+    private static final String CHANNEL="quick_expenses";
+    private boolean quickEnabled=false;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         web = new WebView(this);
         web.setBackgroundColor(0xFF0B1220);
         setContentView(web);
+        quickEnabled=getPreferences(MODE_PRIVATE).getBoolean("quick_enabled",false);
+        if(quickEnabled) showQuickNotification();
         WebSettings settings=web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -64,10 +79,65 @@ public class MainActivity extends Activity {
             while ((n=in.read(buffer)) != -1) out.write(buffer,0,n);
             // HTTPS origin makes localStorage work and keeps files bundled inside the app.
             web.loadDataWithBaseURL("https://appassets.androidplatform.net/", out.toString("UTF-8"), "text/html", "UTF-8", null);
+            if(getIntent()!=null && getIntent().getBooleanExtra("quick",false))
+                web.postDelayed(() -> web.evaluateJavascript("window.openQuickEntry && window.openQuickEntry()",null),500);
         } catch(Exception e) { Toast.makeText(this, "Error al abrir la app", Toast.LENGTH_LONG).show(); }
     }
 
+    private void showQuickNotification() {
+        if(!quickEnabled)return;
+        if(Build.VERSION.SDK_INT>=33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)return;
+        NotificationManager nm=(NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        if(Build.VERSION.SDK_INT>=26)nm.createNotificationChannel(new NotificationChannel(CHANNEL,"Registro rápido de gastos",NotificationManager.IMPORTANCE_LOW));
+        Intent i=new Intent(this,MainActivity.class);i.putExtra("quick",true);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent p=PendingIntent.getActivity(this,900,i,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+        Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(this,CHANNEL):new Notification.Builder(this);
+        b.setSmallIcon(android.R.drawable.ic_input_add).setContentTitle("Mi Bolsillo · Registrar gasto")
+         .setContentText("Toca para anotar un movimiento rápidamente")
+         .setContentIntent(p).setOngoing(true).setOnlyAlertOnce(true)
+         .addAction(new Notification.Action.Builder(android.R.drawable.ic_input_add,"Registrar gasto",p).build());
+        nm.notify(2026,b.build());
+    }
+    private void setQuick(boolean enabled){
+        quickEnabled=enabled;
+        getPreferences(MODE_PRIVATE).edit().putBoolean("quick_enabled",enabled).apply();
+        NotificationManager nm=(NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        if(!enabled){nm.cancel(2026);return;}
+        if(Build.VERSION.SDK_INT>=33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},903);
+        else showQuickNotification();
+    }
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grants){
+        super.onRequestPermissionsResult(requestCode,permissions,grants);
+        if(requestCode==903 && grants.length>0 && grants[0]==PackageManager.PERMISSION_GRANTED)showQuickNotification();
+    }
+    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);if(intent.getBooleanExtra("quick",false))web.evaluateJavascript("window.openQuickEntry && window.openQuickEntry()",null);}
+
     private class NativeBridge {
+        @JavascriptInterface public void setQuickNotification(boolean enable){runOnUiThread(()->setQuick(enable));}
+        @JavascriptInterface public void syncSummary(String json){
+            runOnUiThread(()->{try{
+                getSharedPreferences("widget_summary",MODE_PRIVATE).edit().putString("summary",json).apply();
+                BalanceWidget.updateAll(MainActivity.this);
+            }catch(Exception ignored){}});
+        }
+        @JavascriptInterface public void printHtml(String content){
+            runOnUiThread(()->{
+                if(printView!=null){printView.destroy();printView=null;}
+                printView=new WebView(MainActivity.this);
+                printView.getSettings().setJavaScriptEnabled(false);
+                final WebView w=printView;
+                w.setWebViewClient(new WebViewClient(){
+                    @Override public void onPageFinished(WebView view,String url){
+                        PrintManager manager=(PrintManager)getSystemService(PRINT_SERVICE);
+                        manager.print("Mi Bolsillo - Informe",w.createPrintDocumentAdapter("Informe Mi Bolsillo"),null);
+                    }
+                });
+                w.loadDataWithBaseURL("https://appassets.androidplatform.net/report/",content,"text/html","UTF-8",null);
+            });
+        }
+
         @JavascriptInterface public void saveText(String filename, String content, String mime) {
             runOnUiThread(() -> {
                 pendingExport = content.getBytes(StandardCharsets.UTF_8);
@@ -117,6 +187,7 @@ public class MainActivity extends Activity {
     }
     @Override protected void onDestroy() {
         if(web!=null) { web.destroy(); web=null; }
+        if(printView!=null){printView.destroy();printView=null;}
         super.onDestroy();
     }
 }
